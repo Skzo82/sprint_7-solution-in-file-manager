@@ -83,7 +83,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public int addNewTask(Task task) {
-        if (tasks.containsKey(task.getId())) {
+        if (task.getId() != 0 && tasks.containsKey(task.getId())) {
             throw new IllegalArgumentException("Task with this ID already exists.");
         }
         task.setId(generateId());
@@ -100,6 +100,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public int addNewSubtask(Subtask subtask) {
+        if (subtask.getEpicId() == subtask.getId()) {
+            throw new IllegalArgumentException("Epic cannot be its own subtask.");
+        }
+
         if (subtasks.containsKey(subtask.getId())) {
             throw new IllegalArgumentException("Subtask with this ID already exists.");
         }
@@ -122,8 +126,10 @@ public class InMemoryTaskManager implements TaskManager {
         if (!tasks.containsKey(task.getId())) {
             throw new IllegalArgumentException("Task not found.");
         }
-        Task oldTask = new Task(tasks.get(task.getId()));
-        historyManager.add(oldTask);
+
+        // Save the previous version of the task before updating it
+        Task oldTask = new Task(tasks.get(task.getId())); // Create a copy of the previous version
+        historyManager.add(oldTask); // Add the previous version to history
 
         tasks.put(task.getId(), task);
     }
@@ -139,6 +145,13 @@ public class InMemoryTaskManager implements TaskManager {
         if (!subtasks.containsKey(subtask.getId())) {
             throw new IllegalArgumentException("Subtask not found.");
         }
+
+        // Save the previous version of the subtask before updating it
+        Subtask oldSubtask = new Subtask(subtasks.get(subtask.getId()).getName(),
+                subtasks.get(subtask.getId()).getDescription(),
+                subtasks.get(subtask.getId()).getEpicId()); // Create a copy of the previous version
+        oldSubtask.setId(subtask.getId()); // Ensure the old subtask has the same ID
+        historyManager.add(oldSubtask); // Add the previous version to history
 
         subtasks.put(subtask.getId(), subtask);
 
